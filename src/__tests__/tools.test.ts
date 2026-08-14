@@ -119,6 +119,31 @@ describe("createPeerCashTools", () => {
     expect(client.estimate).toHaveBeenCalledWith({ amount: 1000000n, currency: "USD" });
   });
 
+  it("accepts USD estimates without an oracle timestamp or numeric ETA", async () => {
+    const client = mockClient();
+    vi.mocked(client.estimate).mockResolvedValueOnce({
+      kind: "oracle-estimate",
+      currency: "USD",
+      amount: 1000000n,
+      rate: 1,
+      receiveAmount: 1,
+      asOf: 1,
+      eta: { label: "No recent fills" },
+    });
+    const tools = createPeerCashTools({
+      client,
+      receiptClient: { getTransactionReceipt: vi.fn(async () => receipt) },
+    });
+
+    await expect(
+      tools.estimate.execute!({ amount: "1000000", currency: "USD" }, {} as never),
+    ).resolves.toMatchObject({
+      currency: "USD",
+      asOf: 1,
+      eta: { label: "No recent fills" },
+    });
+  });
+
   it("returns unsigned transaction values as decimal strings", async () => {
     const tools = createPeerCashTools({
       client: mockClient(),

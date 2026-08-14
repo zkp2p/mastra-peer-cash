@@ -1,6 +1,6 @@
 {
   "name": "@zkp2p/mastra-peer-cash",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Peer Cash tools for Mastra agents to prepare, track, and unwind Base USDC cash-out orders",
   "keywords": [
     "ai-agent",

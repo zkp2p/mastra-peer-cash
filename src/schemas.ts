@@ -63,12 +63,15 @@ export const capabilitiesOutputSchema = z
     }),
     environment: z.string(),
     platforms: z.array(
-      z.object({
-        platform: z.string(),
-        currencies: z.array(z.string()),
-        payeeHint: z.string(),
-        requiresIdentityAttestation: z.boolean(),
-      }),
+      z
+        .object({
+          platform: z.string(),
+          currencies: z.array(z.string()),
+          payeeHint: z.string(),
+          requiresIdentityAttestation: z.boolean(),
+          requiresAtomicAccessPolicy: z.boolean(),
+        })
+        .passthrough(),
     ),
     currencies: z.array(z.string()),
     amount: z.object({
@@ -91,8 +94,8 @@ export const estimateOutputSchema = z
     rate: z.number(),
     receiveAmount: z.number(),
     asOf: z.number(),
-    oracleUpdatedAt: z.number(),
-    eta: z.object({ seconds: z.number(), label: z.string() }).optional(),
+    oracleUpdatedAt: z.number().optional(),
+    eta: z.object({ seconds: z.number().optional(), label: z.string() }).optional(),
   })
   .passthrough();
 

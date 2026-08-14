@@ -2,4 +2,5 @@ node_modules/
 dist/
 *.tgz
 .DS_Store
-
+firebase-debug.log
+pglite-debug.log
