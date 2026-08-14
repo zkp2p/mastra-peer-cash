@@ -1,13 +1,13 @@
-import { createCashClient, type CashClient, type CashClientOptions } from '@zkp2p/cash';
-import { createPublicClient, http, type Hash, type TransactionReceipt } from 'viem';
-import { base } from 'viem/chains';
+import { createCashClient, type CashClient, type CashClientOptions } from "@zkp2p/cash";
+import { createPublicClient, http, type Hash, type TransactionReceipt } from "viem";
+import { base } from "viem/chains";
 
 export interface PeerCashReceiptClient {
   getTransactionReceipt(parameters: { hash: Hash }): Promise<TransactionReceipt>;
 }
 
-export interface PeerCashToolsConfig extends Omit<CashClientOptions, 'environment'> {
-  environment?: CashClientOptions['environment'];
+export interface PeerCashToolsConfig extends Omit<CashClientOptions, "environment"> {
+  environment?: CashClientOptions["environment"];
   client?: CashClient;
   receiptClient?: PeerCashReceiptClient;
 }
@@ -15,7 +15,12 @@ export interface PeerCashToolsConfig extends Omit<CashClientOptions, 'environmen
 export function getPeerCashClient(config: PeerCashToolsConfig = {}): CashClient {
   if (config.client) return config.client;
 
-  const { client: _client, receiptClient: _receiptClient, environment = 'production', ...options } = config;
+  const {
+    client: _client,
+    receiptClient: _receiptClient,
+    environment = "production",
+    ...options
+  } = config;
   return createCashClient({ ...options, environment });
 }
 

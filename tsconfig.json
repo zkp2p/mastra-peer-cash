@@ -1,8 +1,16 @@
 {
-  "extends": "../../tsconfig.node.json",
   "compilerOptions": {
-    "verbatimModuleSyntax": false
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "noUncheckedIndexedAccess": true,
+    "verbatimModuleSyntax": false,
+    "types": ["node", "vitest/globals"]
   },
-  "include": ["src/**/*", "tsdown.config.ts"],
-  "exclude": ["node_modules", "**/*.test.ts"]
+  "include": ["src/**/*", "tsdown.config.ts", "vitest.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }

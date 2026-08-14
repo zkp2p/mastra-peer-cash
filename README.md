@@ -1,4 +1,6 @@
-# @mastra/peer-cash
+# @zkp2p/mastra-peer-cash
+
+[![CI](https://github.com/zkp2p/mastra-peer-cash/actions/workflows/ci.yml/badge.svg)](https://github.com/zkp2p/mastra-peer-cash/actions/workflows/ci.yml)
 
 Peer Cash tools for Mastra agents. The package wraps [`@zkp2p/cash`](https://www.npmjs.com/package/@zkp2p/cash) and lets an agent discover payout rails, estimate fiat received, prepare Base USDC cash-out transactions, finalize confirmed deposits, inspect orders, withdraw unmatched funds, and top up live orders.
 
@@ -7,26 +9,26 @@ Mutating tools return unsigned transactions. Your Mastra host keeps custody and 
 ## Installation
 
 ```bash
-npm install @mastra/peer-cash @mastra/core zod
+npm install @zkp2p/mastra-peer-cash @mastra/core zod
 ```
 
 ## Quick start
 
 ```typescript
-import { Agent } from '@mastra/core/agent';
-import { createPeerCashTools } from '@mastra/peer-cash';
+import { Agent } from "@mastra/core/agent";
+import { createPeerCashTools } from "@zkp2p/mastra-peer-cash";
 
 const tools = createPeerCashTools({
-  environment: 'production',
-  referrer: 'my-mastra-agent',
+  environment: "production",
+  referrer: "my-mastra-agent",
 });
 
 const agent = new Agent({
-  id: 'cash-out-agent',
-  name: 'Cash-out Agent',
+  id: "cash-out-agent",
+  name: "Cash-out Agent",
   instructions:
-    'Use Peer Cash to estimate and prepare cash-outs. Never describe an estimate as a locked quote. Get explicit user approval before the host submits a transaction.',
-  model: 'anthropic/claude-sonnet-4-6',
+    "Use Peer Cash to estimate and prepare cash-outs. Never describe an estimate as a locked quote. Get explicit user approval before the host submits a transaction.",
+  model: "anthropic/claude-sonnet-4-6",
   tools,
 });
 ```

@@ -1,14 +1,14 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const positiveIntegerStringSchema = z
   .string()
-  .regex(/^0*[1-9][0-9]*$/, 'Amount must be a positive base-unit integer string');
+  .regex(/^0*[1-9][0-9]*$/, "Amount must be a positive base-unit integer string");
 
-export const addressSchema = z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'Expected an EVM address');
-export const hashSchema = z.string().regex(/^0x[0-9a-fA-F]{64}$/, 'Expected a transaction hash');
+export const addressSchema = z.string().regex(/^0x[0-9a-fA-F]{40}$/, "Expected an EVM address");
+export const hashSchema = z.string().regex(/^0x[0-9a-fA-F]{64}$/, "Expected a transaction hash");
 export const depositIdSchema = z
   .string()
-  .regex(/^0x[0-9a-fA-F]{40}_[0-9]+$/, 'Expected a Peer composite deposit id');
+  .regex(/^0x[0-9a-fA-F]{40}_[0-9]+$/, "Expected a Peer composite deposit id");
 
 const payeeSchema = z.union([
   z.string().min(1),
@@ -85,7 +85,7 @@ export const capabilitiesOutputSchema = z
 
 export const estimateOutputSchema = z
   .object({
-    kind: z.literal('oracle-estimate'),
+    kind: z.literal("oracle-estimate"),
     currency: z.string(),
     amount: z.string(),
     rate: z.number(),
@@ -101,5 +101,15 @@ export const orderOutputSchema = z
     depositId: depositIdSchema,
     state: z.string(),
     nextActions: z.array(z.string()),
+  })
+  .passthrough();
+
+export const finalizeOutputSchema = z
+  .object({
+    depositId: depositIdSchema,
+    txHash: hashSchema,
+    escrowAddress: addressSchema,
+    onchainDepositId: z.string().regex(/^[0-9]+$/),
+    order: orderOutputSchema,
   })
   .passthrough();

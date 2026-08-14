@@ -1,9 +1,9 @@
-import type { PrepareResult, PreparedTransaction } from '@zkp2p/cash';
+import type { PrepareResult, PreparedTransaction } from "@zkp2p/cash";
 
-export function jsonSafe<T>(value: T): T {
+export function jsonSafe(value: unknown): unknown {
   return JSON.parse(
-    JSON.stringify(value, (_key, item) => (typeof item === 'bigint' ? item.toString() : item)),
-  ) as T;
+    JSON.stringify(value, (_key, item) => (typeof item === "bigint" ? item.toString() : item)),
+  ) as unknown;
 }
 
 export function preparedTransactionToJson(transaction: PreparedTransaction) {
@@ -20,13 +20,13 @@ export function preparedPlanToJson(
     | PrepareResult
     | {
         txs: PreparedTransaction[];
-        steps: PrepareResult['steps'];
+        steps: PrepareResult["steps"];
       },
 ) {
   return {
     txs: plan.txs.map(preparedTransactionToJson),
     steps: plan.steps,
-    ...('accessPolicyRequired' in plan ? { accessPolicyRequired: plan.accessPolicyRequired } : {}),
-    ...('register' in plan ? { register: jsonSafe(plan.register) } : {}),
+    ...("accessPolicyRequired" in plan ? { accessPolicyRequired: plan.accessPolicyRequired } : {}),
+    ...("register" in plan ? { register: jsonSafe(plan.register) } : {}),
   };
 }

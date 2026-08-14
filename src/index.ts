@@ -3,7 +3,7 @@ export {
   getPeerCashReceiptClient,
   type PeerCashReceiptClient,
   type PeerCashToolsConfig,
-} from './client.js';
+} from "./client.js";
 export {
   createPeerCashAccessPolicyTool,
   createPeerCashCapabilitiesTool,
@@ -15,4 +15,4 @@ export {
   createPeerCashTools,
   createPeerCashTopUpTool,
   createPeerCashWithdrawTool,
-} from './tools.js';
+} from "./tools.js";

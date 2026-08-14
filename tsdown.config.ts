@@ -1,16 +1,15 @@
-import { generateTypes } from '@internal/types-builder';
-import { defineConfig } from 'tsdown';
+import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  entry: ['src/index.ts'],
-  format: ['esm', 'cjs'],
+  entry: ["src/index.ts"],
+  format: ["esm", "cjs"],
   fixedExtension: false,
-  nodeProtocol: 'strip',
+  nodeProtocol: "strip",
   clean: true,
-  dts: false,
+  dts: true,
   treeshake: true,
   sourcemap: true,
-  onSuccess: async () => {
-    await generateTypes(process.cwd());
+  deps: {
+    neverBundle: ["@mastra/core", "@zkp2p/cash", "viem", "zod"],
   },
 });
