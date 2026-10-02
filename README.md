@@ -40,7 +40,7 @@ const agent = new Agent({
 3. Call `peer-cash-prepare` and show the unsigned transaction plan to the user.
 4. After approval, submit each transaction in order and confirm it on Base.
 5. Call `peer-cash-finalize` with the confirmed `createDeposit` transaction hash.
-6. If the plan returned `accessPolicyRequired: true`, call `peer-cash-prepare-access-policy` and submit that transaction with the depositor.
+6. For each hash in the plan's `accessPolicyPaymentMethods`, call `peer-cash-prepare-access-policy` with `depositId` and `paymentMethod`, then submit and confirm that transaction with the depositor.
 7. Persist the returned `depositId`. Use it with the order, withdrawal, and top-up tools.
 
 The package does not accept private keys or submit transactions.
