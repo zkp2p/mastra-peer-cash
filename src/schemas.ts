@@ -6,6 +6,9 @@ export const positiveIntegerStringSchema = z
 
 export const addressSchema = z.string().regex(/^0x[0-9a-fA-F]{40}$/, "Expected an EVM address");
 export const hashSchema = z.string().regex(/^0x[0-9a-fA-F]{64}$/, "Expected a transaction hash");
+export const paymentMethodSchema = z
+  .string()
+  .regex(/^0x[0-9a-fA-F]{64}$/, "Expected a payment method hash");
 export const depositIdSchema = z
   .string()
   .regex(/^0x[0-9a-fA-F]{40}_[0-9]+$/, "Expected a Peer composite deposit id");
@@ -50,6 +53,7 @@ export const preparedPlanSchema = z.object({
   txs: z.array(preparedTransactionSchema),
   steps: z.array(preparedStepSchema),
   accessPolicyRequired: z.boolean().optional(),
+  accessPolicyPaymentMethods: z.array(paymentMethodSchema).optional(),
   register: z.unknown().optional(),
 });
 

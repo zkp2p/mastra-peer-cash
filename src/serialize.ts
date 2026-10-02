@@ -27,6 +27,9 @@ export function preparedPlanToJson(
     txs: plan.txs.map(preparedTransactionToJson),
     steps: plan.steps,
     ...("accessPolicyRequired" in plan ? { accessPolicyRequired: plan.accessPolicyRequired } : {}),
+    ...("accessPolicyPaymentMethods" in plan
+      ? { accessPolicyPaymentMethods: plan.accessPolicyPaymentMethods }
+      : {}),
     ...("register" in plan ? { register: jsonSafe(plan.register) } : {}),
   };
 }

@@ -12,6 +12,7 @@ import {
   finalizeOutputSchema,
   hashSchema,
   orderOutputSchema,
+  paymentMethodSchema,
   positiveIntegerStringSchema,
   preparedPlanSchema,
   preparedTransactionSchema,
@@ -121,12 +122,14 @@ export function createPeerCashAccessPolicyTool(config: PeerCashToolsConfig = {})
   return createTool({
     id: "peer-cash-prepare-access-policy",
     description:
-      "Prepare the required verified-buyer access policy for a restricted Peer Cash order. Use only when peer-cash-prepare returned accessPolicyRequired=true, after finalization.",
-    inputSchema: z.object({ depositId: depositIdSchema }),
+      "Prepare the verified-buyer policy for one restricted payment method after finalization. Call once for each hash in peer-cash-prepare accessPolicyPaymentMethods.",
+    inputSchema: z.object({ depositId: depositIdSchema, paymentMethod: paymentMethodSchema }),
     outputSchema: preparedTransactionSchema,
     execute: async (input) =>
       preparedTransactionSchema.parse(
-        preparedTransactionToJson(client.prepareAccessPolicy(input.depositId)),
+        preparedTransactionToJson(
+          client.prepareAccessPolicy(input.depositId, input.paymentMethod as Hash),
+        ),
       ),
   });
 }

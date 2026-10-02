@@ -58,7 +58,7 @@
     "prepublishOnly": "bun run ci"
   },
   "dependencies": {
-    "@zkp2p/cash": "0.4.9",
+    "@zkp2p/cash": "0.7.0",
     "viem": "2.55.13"
   },
   "devDependencies": {

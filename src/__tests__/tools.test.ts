@@ -7,6 +7,7 @@ vi.mock("@mastra/core/tools", () => ({
 }));
 
 import { createPeerCashTools } from "../tools.js";
+import { paymentMethodSchema } from "../schemas.js";
 
 const prepared: PreparedTransaction = {
   to: "0x1111111111111111111111111111111111111111",
@@ -53,6 +54,7 @@ function mockClient() {
       steps: [{ kind: "createDeposit", description: "Create order" }],
       register: { hashedOnchainIds: [] },
       accessPolicyRequired: false,
+      accessPolicyPaymentMethods: [],
     })),
     finalizePreparedCashout: vi.fn(() => ({
       depositId: "0x1111111111111111111111111111111111111111_1",
@@ -165,6 +167,46 @@ describe("createPeerCashTools", () => {
       chainId: 8453,
     });
     expect(plan && "accessPolicyRequired" in plan && plan.accessPolicyRequired).toBe(false);
+  });
+
+  it("preserves every restricted method and prepares each policy with its hash", async () => {
+    const client = mockClient();
+    const paymentMethods = [
+      "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    ] as const;
+    vi.mocked(client.prepare).mockResolvedValueOnce({
+      txs: [prepared],
+      steps: [{ kind: "createDeposit", description: "Create order" }],
+      register: { hashedOnchainIds: [] },
+      accessPolicyRequired: true,
+      accessPolicyPaymentMethods: [...paymentMethods],
+    });
+    const tools = createPeerCashTools({
+      client,
+      receiptClient: { getTransactionReceipt: vi.fn(async () => receipt) },
+    });
+    const plan = await tools.prepare.execute!(
+      {
+        amount: "1000000",
+        receive: [
+          { platform: "venmo", currency: "USD", payee: "@maker" },
+          { platform: "paypal", currency: "USD", payee: "maker@example.com" },
+        ],
+      },
+      {} as never,
+    );
+    expect(plan).toMatchObject({ accessPolicyPaymentMethods: paymentMethods });
+
+    const depositId = "0x1111111111111111111111111111111111111111_1";
+    for (const paymentMethod of paymentMethods) {
+      await tools.prepareAccessPolicy.execute!({ depositId, paymentMethod }, {} as never);
+    }
+    expect(vi.mocked(client.prepareAccessPolicy).mock.calls).toEqual(
+      paymentMethods.map((paymentMethod) => [depositId, paymentMethod]),
+    );
+    expect(paymentMethodSchema.safeParse(undefined).success).toBe(false);
+    expect(paymentMethodSchema.safeParse("venmo").success).toBe(false);
   });
 
   it("finalizes a confirmed receipt into a resumable deposit id", async () => {
