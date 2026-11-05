@@ -54,8 +54,7 @@
     "format:fix": "oxfmt .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "ci": "bun run lint && bun run format && bun run typecheck && bun run test && bun run build && publint && attw --pack .",
-    "prepublishOnly": "bun run ci"
+    "ci": "bun run lint && bun run format && bun run typecheck && bun run test && bun run build && publint && attw --pack ."
   },
   "dependencies": {
     "@zkp2p/cash": "0.7.0",
