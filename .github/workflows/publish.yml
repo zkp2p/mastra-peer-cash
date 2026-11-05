@@ -1,0 +1,183 @@
+name: Publish package
+
+run-name: Publish @zkp2p/mastra-peer-cash@${{ inputs.version }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact package.json version to publish from main
+        required: true
+        type: string
+      dist_tag:
+        description: "Optional npm tag (default: latest for stable, first prerelease identifier otherwise)"
+        required: false
+        default: ""
+        type: string
+      allow_prerelease_latest:
+        description: Explicitly allow a prerelease to replace latest
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-publish-mastra-peer-cash
+  cancel-in-progress: false
+
+env:
+  RELEASE_VERSION: ${{ inputs.version }}
+  PACKAGE_NAME: "@zkp2p/mastra-peer-cash"
+
+jobs:
+  verify:
+    name: Verify and pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      dist_tag: ${{ steps.guard.outputs.dist_tag }}
+    steps:
+      - name: Patch hosted action runtime
+        if: runner.environment == 'github-hosted' && runner.os == 'Linux'
+        uses: zkp2p/.github/actions/patch-node24@f9560a725dbcda32544968f34d52382d3af316e5
+
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+
+      - name: Guard branch, version, tag, and unpublished status
+        id: guard
+        env:
+          REQUESTED_TAG: ${{ inputs.dist_tag }}
+          ALLOW_PRERELEASE_LATEST: ${{ inputs.allow_prerelease_latest }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { appendFileSync, readFileSync } from "node:fs";
+          import { spawnSync } from "node:child_process";
+
+          const fail = (message) => { throw new Error(message); };
+          if (process.env.GITHUB_REF !== "refs/heads/main") fail("Publish only from main");
+          const version = process.env.RELEASE_VERSION;
+          const numeric = "(?:0|[1-9][0-9]*)";
+          const identifier = `(?:${numeric}|[0-9]*[A-Za-z-][0-9A-Za-z-]*)`;
+          const semver = new RegExp(`^${numeric}\\.${numeric}\\.${numeric}(?:-(${identifier}(?:\\.${identifier})*))?$`);
+          // npm normalizes away build metadata, so it cannot identify an exact registry version.
+          const match = semver.exec(version);
+          if (!match || match[0] !== version) fail("Use exact SemVer without a v prefix or build metadata");
+          const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+          if (pkg.name !== process.env.PACKAGE_NAME || pkg.version !== version) {
+            fail("Release version and package name must match package.json");
+          }
+          const prerelease = match[1];
+          const tag = process.env.REQUESTED_TAG || (prerelease ? prerelease.split(".")[0] : "latest");
+          // Restrict tags to readable names that cannot be mistaken for a SemVer range.
+          if (tag.match(/^[a-z][a-z0-9-]*$/)?.[0] !== tag || tag === "x" || /^v[0-9]/.test(tag)) {
+            fail("Set dist_tag to a lowercase tag name, not x or v followed by digits");
+          }
+          if (prerelease && tag === "latest" && process.env.ALLOW_PRERELEASE_LATEST !== "true") {
+            fail("Publishing a prerelease to latest requires allow_prerelease_latest=true");
+          }
+          const result = spawnSync("npm", [
+            "view", `${pkg.name}@${version}`, "version", "--json",
+            "--registry=https://registry.npmjs.org", "--fetch-retries=0", "--fetch-timeout=15000",
+          ], { encoding: "utf8", timeout: 20000 });
+          if (result.error || result.signal) fail("npm version lookup failed");
+          const response = result.stdout.trim() ? JSON.parse(result.stdout) : null;
+          if (result.status === 0) {
+            if (response !== null && response !== "") fail("Version already exists on npm");
+          } else if (response?.error?.code !== "E404") {
+            fail("npm version lookup failed; refusing to treat a registry failure as an unpublished version");
+          }
+          appendFileSync(process.env.GITHUB_OUTPUT, `dist_tag=${tag}\n`);
+          NODE
+
+      - name: Set up pinned Bun
+        run: |
+          npm install --global bun@1.4.4
+          test "$(bun --version)" = "1.4.4"
+
+      - name: Install immutable dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Lint, format, typecheck, test, and build
+        run: |
+          bun run lint
+          bun run format
+          bun run typecheck
+          bun run test
+          bun run build
+
+      - name: Pack once and check package exports and types
+        run: |
+          mkdir -p "$RUNNER_TEMP/npm-pack"
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/npm-pack"
+          bunx --no-install publint --pack false
+          bunx --no-install attw "$RUNNER_TEMP/npm-pack/zkp2p-mastra-peer-cash-${RELEASE_VERSION}.tgz"
+
+      - name: Upload verified tarball
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: mastra-peer-cash-package
+          path: ${{ runner.temp }}/npm-pack/*.tgz
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
+  publish:
+    name: Publish with npm OIDC
+    needs: verify
+    # npm trusted publishing requires a GitHub-hosted runner.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DIST_TAG: ${{ needs.verify.outputs.dist_tag }}
+    steps:
+      - name: Patch hosted action runtime
+        if: runner.environment == 'github-hosted' && runner.os == 'Linux'
+        uses: zkp2p/.github/actions/patch-node24@f9560a725dbcda32544968f34d52382d3af316e5
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24.x
+          package-manager-cache: false
+          registry-url: https://registry.npmjs.org
+
+      - name: Pin OIDC-capable npm
+        run: |
+          npm install --global npm@11.9.0
+          test "$(npm --version)" = "11.9.0"
+
+      - name: Download verified tarball
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: mastra-peer-cash-package
+          path: ${{ runner.temp }}/npm-pack
+
+      - name: Publish exact tarball with provenance
+        run: npm publish "$RUNNER_TEMP/npm-pack/zkp2p-mastra-peer-cash-${RELEASE_VERSION}.tgz" --access public --tag "$DIST_TAG" --provenance --ignore-scripts
+
+      - name: Verify registry version and dist-tag
+        run: |
+          deadline=$((SECONDS + 60))
+          while (( SECONDS < deadline )); do
+            version=$(npm view "$PACKAGE_NAME@$RELEASE_VERSION" version --registry=https://registry.npmjs.org --fetch-retries=0 --fetch-timeout=5000 || true)
+            tag=$(npm view "$PACKAGE_NAME" "dist-tags.$DIST_TAG" --registry=https://registry.npmjs.org --fetch-retries=0 --fetch-timeout=5000 || true)
+            if [ "$version" = "$RELEASE_VERSION" ] && [ "$tag" = "$RELEASE_VERSION" ]; then
+              echo "Verified $PACKAGE_NAME@$RELEASE_VERSION on $DIST_TAG"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "Registry version or dist-tag did not match within 60 seconds" >&2
+          exit 1
