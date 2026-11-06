@@ -135,7 +135,7 @@ jobs:
     needs: verify
     # npm trusted publishing requires a GitHub-hosted runner.
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
     environment: npm-publish
     permissions:
       contents: read
@@ -169,7 +169,7 @@ jobs:
 
       - name: Verify registry version and dist-tag
         run: |
-          deadline=$((SECONDS + 60))
+          deadline=$((SECONDS + 600))
           while (( SECONDS < deadline )); do
             version=$(npm view "$PACKAGE_NAME@$RELEASE_VERSION" version --registry=https://registry.npmjs.org --fetch-retries=0 --fetch-timeout=5000 || true)
             tag=$(npm view "$PACKAGE_NAME" "dist-tags.$DIST_TAG" --registry=https://registry.npmjs.org --fetch-retries=0 --fetch-timeout=5000 || true)
@@ -179,5 +179,5 @@ jobs:
             fi
             sleep 5
           done
-          echo "Registry version or dist-tag did not match within 60 seconds" >&2
+          echo "Registry version or dist-tag did not match within 10 minutes" >&2
           exit 1
