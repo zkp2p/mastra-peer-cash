@@ -9,8 +9,10 @@ Mutating tools return unsigned transactions. Your Mastra host keeps custody and 
 ## Installation
 
 ```bash
-npm install @zkp2p/mastra-peer-cash @mastra/core zod
+npm install @zkp2p/mastra-peer-cash@0.1.1 "@mastra/core@>=1.59.0 <2" "zod@^4"
 ```
+
+The published adapter requires Node.js 22.13 or later and pins `@zkp2p/cash@0.4.9`.
 
 ## Quick start
 
@@ -36,12 +38,13 @@ const agent = new Agent({
 ## Lifecycle
 
 1. Call `peer-cash-capabilities` before naming a platform or currency.
-2. Call `peer-cash-estimate`. The binding Chainlink rate resolves when a buyer fills.
+2. Call `peer-cash-estimate`. The estimate is approximate. Each buyer locks the oracle rate when they signal an intent.
 3. Call `peer-cash-prepare` and show the unsigned transaction plan to the user.
 4. After approval, submit each transaction in order and confirm it on Base.
 5. Call `peer-cash-finalize` with the confirmed `createDeposit` transaction hash.
-6. For each hash in the plan's `accessPolicyPaymentMethods`, call `peer-cash-prepare-access-policy` with `depositId` and `paymentMethod`, then submit and confirm that transaction with the depositor.
-7. Persist the returned `depositId`. Use it with the order, withdrawal, and top-up tools.
+6. Persist the returned `depositId`. Use it with the order, withdrawal, and top-up tools.
+
+The published prepare result can report `accessPolicyRequired`. Skip the legacy `peer-cash-prepare-access-policy` follow-up: it would attach a retired group. The confirmed deposit is already tracked by `depositId`.
 
 The package does not accept private keys or submit transactions.
 
