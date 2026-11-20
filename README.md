@@ -62,10 +62,16 @@ An `ORDER_NOT_FOUND` response immediately after finalization is usually indexer 
 
 Releases use only [publish.yml](.github/workflows/publish.yml) through npm trusted publishing (GitHub OIDC), with provenance for this public repository. There are no npm publishing tokens. npm is configured to require 2FA and disallow tokens; local `npm publish` is rejected.
 
-One-time human setup after this workflow merges: create the GitHub environment `npm-publish`, restrict its deployment branches to `main`, and register the exact workflow filename and environment:
+Create the GitHub environment `npm-publish` and restrict deployments to `main`.
+
+Before the first approved release, a package owner should check the trusted
+publisher in the npm package settings. Confirm the repository, workflow
+filename, environment and permission to publish directly. A new entry expires after 48 hours unless a publish succeeds.
+Create or recreate a missing or expired entry when the release is ready.
+[Trusted publisher expiry](https://github.blog/changelog/2026-10-02-unvalidated-npm-trusted-publishing-configurations-now-expire/)
 
 ```bash
-npm trust github @zkp2p/mastra-peer-cash --file .github/workflows/publish.yml --repo zkp2p/mastra-peer-cash --env npm-publish --allow-publish
+npm trust github @zkp2p/mastra-peer-cash --file publish.yml --repo zkp2p/mastra-peer-cash --env npm-publish --allow-publish
 ```
 
 1. Bump `package.json`'s version and update `CHANGELOG.md` in a PR; merge it to `main`.
@@ -75,10 +81,10 @@ npm trust github @zkp2p/mastra-peer-cash --file .github/workflows/publish.yml --
    gh workflow run publish.yml --ref main -f version=X.Y.Z
    ```
 
-3. Check that the workflow succeeds, then verify the version and selected tag:
+3. Check that the workflow succeeds, then verify the version, trusted publisher ID (`github`), and selected tag:
 
    ```bash
-   npm view @zkp2p/mastra-peer-cash@X.Y.Z version
+   npm view @zkp2p/mastra-peer-cash@X.Y.Z version _npmUser.trustedPublisher.id
    npm view @zkp2p/mastra-peer-cash dist-tags.latest
    ```
 
